@@ -1,81 +1,126 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const downloadBtn = document.getElementById("downloadBtn");
-
-    downloadBtn.addEventListener("click", () => {
-        const data = collectFormData();
-        handleImageUpload().then(base64Image => {
-            data.picture = base64Image;
-            const html = renderHTML(data);
-            const blob = new Blob([html], { type: "text/html" });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.download = `${data.name.replace(/\s+/g,'_')}_portfolio.html`;
-            link.click();
-        });
-    });
-
-    const addSocialBtn = document.getElementById("addSocialBtn");
-    addSocialBtn.addEventListener("click", () => {
-        const wrapper = document.getElementById("socialLinksWrapper");
-        const div = document.createElement("div");
-        div.classList.add("social-link");
-        div.innerHTML = `
-            <select class="social-type">
-                <option value="github">GitHub</option>
-                <option value="twitter">Twitter</option>
-                <option value="linkedin">LinkedIn</option>
-                <option value="instagram">Instagram</option>
-                <option value="email">Email</option>
-            </select>
-            <input type="text" placeholder="https://..." class="social-url" />
-            <button type="button" class="remove-social">Remove</button>
-        `;
-        wrapper.appendChild(div);
-
-        div.querySelector(".remove-social").addEventListener("click", () => {
-            div.remove();
-        });
-
-        updatePreview();
-    });
+    initEvents();
+    addInitialFields();
 });
 
-function collectFormData() {
-    const fields = document.querySelectorAll("input[type='text'], textarea");
-    const color = document.getElementById("colorPicker").value;
+function initEvents() {
+    document.getElementById("addSocialBtn").addEventListener("click", addSocialLink);
+    document.getElementById("addProjectBtn").addEventListener("click", addProject);
+    document.getElementById("pfpUpload").addEventListener("change", updatePreview);
+    document.getElementById("colorPicker").addEventListener("input", updatePreview);
+    document.getElementById("downloadBtn").addEventListener("click", downloadHTML);
 
-    const socialLinks = [];
-    document.querySelectorAll(".social-link").forEach(sl => {
-        const type = sl.querySelector(".social-type").value;
-        const url = sl.querySelector(".social-url").value.trim();
-        if(url) socialLinks.push({ type, url });
+    document.querySelectorAll("#nameInput, #bioInput")
+        .forEach(el => el.addEventListener("input", updatePreview));
+}
+
+function addInitialFields() {
+    addSocialLink();
+    addProject();
+    updatePreview();
+}
+
+function addSocialLink() {
+    const wrap = document.getElementById("socialLinksWrapper");
+    const div = document.createElement("div");
+    div.classList.add("social-link");
+
+    div.innerHTML = `
+        <select class="social-type">
+            <option value="github">GitHub</option>
+            <option value="twitter">Twitter</option>
+            <option value="linkedin">LinkedIn</option>
+            <option value="instagram">Instagram</option>
+            <option value="email">Email</option>
+        </select>
+        <input type="text" class="social-url" placeholder="https://...">
+        <button type="button" class="remove-social">X</button>
+    `;
+
+    div.querySelector(".remove-social").addEventListener("click", () => {
+        div.remove();
+        updatePreview();
+    });
+
+    wrap.appendChild(div);
+    updatePreview();
+}
+
+function addProject() {
+    const wrap = document.getElementById("projectsWrapper");
+    const div = document.createElement("div");
+    div.classList.add("project");
+
+    div.innerHTML = `
+        <input type="text" class="project-title" placeholder="Project Title">
+        <input type="text" class="project-link" placeholder="https://project-url.com">
+        <textarea class="project-desc" placeholder="Short project description"></textarea>
+        <button type="button" class="remove-project">X</button>
+    `;
+
+    div.querySelector(".remove-project").addEventListener("click", () => {
+        div.remove();
+        updatePreview();
+    });
+
+    div.querySelectorAll("input, textarea").forEach(el => {
+        el.addEventListener("input", updatePreview);
+    });
+
+    wrap.appendChild(div);
+    updatePreview();
+}
+
+function collectFormData() {
+    const socials = [];
+    document.querySelectorAll(".social-link").forEach(d => {
+        const type = d.querySelector(".social-type").value;
+        const url = d.querySelector(".social-url").value.trim();
+        if (url) socials.push({ type, url });
+    });
+
+    const projects = [];
+    document.querySelectorAll(".project").forEach(p => {
+        const title = p.querySelector(".project-title").value.trim();
+        const link = p.querySelector(".project-link").value.trim();
+        const desc = p.querySelector(".project-desc").value.trim();
+        if (title) projects.push({ title, link, desc });
     });
 
     return {
-        name: fields[0].value || "John Doe",
-        bio: fields[1].value || "A short bio goes here...",
-        picture: "",
-        color,
-        socialLinks
+        name: document.getElementById("nameInput").value || "John Doe",
+        bio: document.getElementById("bioInput").value || "A short bio goes here...",
+        color: document.getElementById("colorPicker").value,
+        socialLinks: socials,
+        projects
     };
 }
 
 function handleImageUpload() {
     return new Promise(resolve => {
-        const fileInput = document.getElementById("pfpUpload");
-        const file = fileInput.files[0];
-        if (!file) {
-            resolve("placeholder.png");
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(file);
+        const file = document.getElementById("pfpUpload").files[0];
+        if (!file) return resolve("../public/placeholder.png");
+
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.readAsDataURL(file);
+    });
+}
+
+function downloadHTML() {
+    const data = collectFormData();
+    handleImageUpload().then(pic => {
+        data.picture = pic;
+        const html = renderHTML(data);
+        const blob = new Blob([html], { type: "text/html" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${data.name.replace(/\s+/g, "_")}_portfolio.html`;
+        a.click();
     });
 }
 
 function renderHTML(data) {
-    const colors = { background: data.color, text: "#fff", link: "#fff" };
     return `
 <!DOCTYPE html>
 <html>
@@ -84,33 +129,50 @@ function renderHTML(data) {
 <title>${data.name} - Portfolio</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-body { font-family: Arial,sans-serif; margin:0; padding:0; background:${colors.background}; color:${colors.text}; text-align:center;}
-.container { max-width:800px; margin:0 auto; padding:60px 20px;}
-img { width:160px; height:160px; border-radius:50%; object-fit:cover; border:4px solid rgba(255,255,255,0.5); margin-bottom:20px; box-shadow:0 4px 12px rgba(0,0,0,0.2);}
-h1 { font-size:36px; margin:10px 0;}
-p { font-size:18px; line-height:1.5; max-width:600px; margin:0 auto 30px;}
-.links a { display:inline-flex; align-items:center; gap:8px; margin:10px; padding:8px 16px; font-size:18px; text-decoration:none; color:${colors.link}; border:1px solid ${colors.link}; border-radius:8px;}
-.links a:hover { background:${colors.link}; color:${colors.text};}
-@media (max-width:600px) { .container { padding:30px 10px;} img { width:120px; height:120px;} h1 { font-size:28px;} p { font-size:16px;} }
+body { font-family: Arial; margin:0; padding:0; background:${data.color}; color:#fff; text-align:center; }
+.container { max-width:800px; margin:auto; padding:40px 20px; }
+img { width:160px; height:160px; border-radius:50%; object-fit:cover; border:4px solid #fff; }
+h1 { font-size:36px; margin:15px 0; }
+.projects { margin-top:40px; text-align:left; }
+.project { background:rgba(255,255,255,0.1); padding:15px; border-radius:8px; margin-bottom:15px; }
+.project h3 { margin:0 0 8px; }
+.links a { margin:10px; padding:8px 16px; border:1px solid #fff; border-radius:8px; display:inline-flex; align-items:center; gap:8px; color:#fff; text-decoration:none; }
 </style>
 </head>
+
 <body>
 <div class="container">
-<img src="${data.picture}">
-<h1>${data.name}</h1>
-<p>${data.bio}</p>
+    <img src="${data.picture}">
+    <h1>${data.name}</h1>
+    <p>${data.bio}</p>
+
 <div class="links">
-${data.socialLinks.map(sl => {
-    let icon = "fa-link";
-    if(sl.type === "github") icon = "fa-brands fa-github";
-    if(sl.type === "twitter") icon = "fa-brands fa-twitter";
-    if(sl.type === "linkedin") icon = "fa-brands fa-linkedin";
-    if(sl.type === "instagram") icon = "fa-brands fa-instagram";
-    if(sl.type === "email") icon = "fa-solid fa-envelope";
-    const href = sl.type === "email" ? `mailto:${sl.url}` : sl.url;
-    return `<a href="${href}" target="_blank"><i class="${icon}"></i> ${sl.type.charAt(0).toUpperCase()+sl.type.slice(1)}</a>`;
-}).join("")}
+    ${data.socialLinks.map(sl => {
+        const icons = {
+            github: "fa-brands fa-github",
+            twitter: "fa-brands fa-twitter",
+            linkedin: "fa-brands fa-linkedin",
+            instagram: "fa-brands fa-instagram",
+            email: "fa-solid fa-envelope"
+        };
+        const href = sl.type === "email" ? `mailto:${sl.url}` : sl.url;
+
+        return `<a href="${href}" target="_blank">
+            <i class="${icons[sl.type]}"></i>
+            ${sl.type.charAt(0).toUpperCase() + sl.type.slice(1)}
+        </a>`;
+    }).join("")}
 </div>
+
+    <div class="projects">
+        ${data.projects.map(p => `
+            <div class="project">
+                <h3>${p.title}</h3>
+                <p>${p.desc}</p>
+                ${p.link ? `<a href="${p.link}" target="_blank">View Project</a>` : ""}
+            </div>
+        `).join("")}
+    </div>
 </div>
 </body>
 </html>
