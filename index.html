@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="styles.css">
+<title>Portfolio Generator</title>
+</head>
+<body>
+
+<div class="generator-wrapper">
+
+  <div class="form-container">
+    <h1>Portfolio Generator</h1>
+
+    <form class="form-box">
+
+      <label>Name</label>
+      <input id="nameInput" type="text" placeholder="John Doe" />
+
+      <label>Bio</label>
+      <textarea id="bioInput" placeholder="A description about you"></textarea>
+
+      <label>Profile Picture</label>
+      <input type="file" id="pfpUpload" accept="image/*">
+
+      <label>Color Theme</label>
+      <input type="color" id="colorPicker" value="#3b5bdb">
+
+      <label>Social Links</label>
+      <div id="socialLinksWrapper"></div>
+      <button type="button" id="addSocialBtn">Add Social Link</button>
+
+      <label>Projects</label>
+      <div id="projectsWrapper"></div>
+      <button type="button" id="addProjectBtn">Add Project</button>
+
+
+      <button type="button" id="downloadBtn">Download HTML</button>
+
+    </form>
+  </div>
+
+  <div class="preview-container">
+    <h2>Live Preview</h2>
+    <iframe id="previewFrame"></iframe>
+  </div>
+
+</div>
+
+<script src="../src/js/generator.js"></script>
+<script src="../src/js/preview.js"></script>
+</body>
+</html>
